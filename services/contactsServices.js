@@ -3,7 +3,6 @@ import path from "node:path";
 import crypto from "node:crypto";
 
 const contactsPath = path.resolve("db", "contacts.json");
-  
 
 async function writeFile(contacts) {
   await fs.writeFile(contactsPath, JSON.stringify(contacts, undefined, 2));
@@ -11,7 +10,6 @@ async function writeFile(contacts) {
 
 async function listContacts() {
     const data = await fs.readFile(contactsPath, { encoding: "utf-8" });
-      
     return JSON.parse(data);
 }
 
@@ -42,8 +40,6 @@ async function removeContact(contactId) {
   await writeFile(contacts);
 
   return deletedContact;
-
-
 }
 
 async function addContact(name, email, phone) {
@@ -71,16 +67,15 @@ async function updateContact(contactId, data) {
   }
 
   const updateContact = contacts[index];
-  // console.log(updateContact);
 
   for (let key in data) {
     if (data.hasOwnProperty(key)) {
         updateContact[key] = data[key];
     }
   }
-  // console.log(updateContact);
+
   contacts.splice(index, 1, updateContact);
-//  console.log(updateContact);
+
   await writeFile(contacts);
 
   return updateContact;

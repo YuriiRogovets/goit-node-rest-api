@@ -2,7 +2,6 @@ import contactsService from "../services/contactsServices.js";
 import HttpError from "../helpers/HttpError.js"
 import {createContactSchema, updateContactSchema} from "../schemas/contactsSchemas.js"
 
-
 export const getAllContacts = async (req, res, next) => {
     try {
         const contacts = await contactsService.listContacts();
