@@ -4,16 +4,10 @@ import crypto from "node:crypto";
 
 const contactsPath = path.resolve("db", "contacts.json");
   
-// async function readFile() {
-//   const data = await fs.readFile(contactsPath, { encoding: "utf-8" });
-
-//   return JSON.parse(data);
-// }
 
 async function writeFile(contacts) {
   await fs.writeFile(contactsPath, JSON.stringify(contacts, undefined, 2));
 }
-
 
 async function listContacts() {
     const data = await fs.readFile(contactsPath, { encoding: "utf-8" });
@@ -68,4 +62,28 @@ async function addContact(name, email, phone) {
     return newContact;
 }
 
-export { listContacts, removeContact, getContactById, addContact };
+async function updateContact(contactId, data) {
+  const contacts = await listContacts();
+
+  const index = contacts.findIndex((contact) => contact.id === contactId);
+  if (index === -1) {
+    return null;
+  }
+
+  const updateContact = contacts[index];
+  // console.log(updateContact);
+
+  for (let key in data) {
+    if (data.hasOwnProperty(key)) {
+        updateContact[key] = data[key];
+    }
+  }
+  // console.log(updateContact);
+  contacts.splice(index, 1, updateContact);
+//  console.log(updateContact);
+  await writeFile(contacts);
+
+  return updateContact;
+}
+
+export default { listContacts, removeContact, getContactById, addContact, updateContact };
