@@ -1,6 +1,7 @@
 import contactsService from "../services/contactsServices.js";
 import HttpError from "../helpers/HttpError.js"
 import {createContactSchema, updateContactSchema} from "../schemas/contactsSchemas.js"
+import { log } from "console";
 
 export const getAllContacts = async (req, res, next) => {
     try {
@@ -54,8 +55,10 @@ export const createContact = async (req, res, next) => {
     }
     const { error } = createContactSchema.validate(contact, {abortEarly: false})
     
-    if (typeof error !== "undefined") {
-         return res.status(400).send(error.details.map((error) => error.message).join(", "))
+        if (typeof error !== "undefined") {
+        
+            throw HttpError(400, error);
+            
     } else {
         
         const newContact = await contactsService.addContact(name, email, phone);
@@ -72,7 +75,13 @@ export const updateContact = async (req, res, next) => {
     try {
         const { id } = req.params;
         const data = req.body;
-                
+        
+        if (Object.keys(data).length === 0) {
+
+             throw HttpError(400, "Body must have at least one field");
+          
+        }
+                     
         const contact = {
             name: req.body.name,
             email: req.body.email,
@@ -81,12 +90,18 @@ export const updateContact = async (req, res, next) => {
         const { error } = updateContactSchema.validate(contact, {abortEarly: false})
     
         if (typeof error !== "undefined") {
-         return res.status(400).send(error.details.map((error) => error.message).join(", "))
-        } else {        
-            const newContact = await contactsService.updateContact(id, data);
-            console.log(newContact);
-            res.status(200).json(newContact); 
+
+            throw HttpError(400, error);
+            
         }
+                      
+            const newContact = await contactsService.updateContact(id, data);
+        if (newContact === null) {
+                throw HttpError(404);
+        }
+        
+        res.status(200).json(newContact); 
+        
 
     } catch (error) {
         
