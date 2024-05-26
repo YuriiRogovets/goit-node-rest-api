@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
   password: {
@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+},{
+    versionKey: false
 })
 
 export default mongoose.model("User", userSchema);

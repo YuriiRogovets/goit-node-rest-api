@@ -1,4 +1,3 @@
-// import contactsService from "../services/contactsServices.js";
 import HttpError from "../helpers/HttpError.js"
 import { createContactSchema, updateContactSchema, updateStatusContactSchema } from "../schemas/contactsSchemas.js"
 import Contact from "../models/contact.js"

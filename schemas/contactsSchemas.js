@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { token } from "morgan";
 
 export const createContactSchema = Joi.object({
   name: Joi.string().required(),
@@ -18,4 +19,11 @@ export const updateStatusContactSchema = Joi.object({
   email: Joi.string(),
   phone: Joi.string(),
   favorite: Joi.boolean().required(),
+});
+
+export const createUserSchema = Joi.object({
+  password: Joi.string().required().min(5),
+  email: Joi.string().required(),
+  subscription: Joi.string(),
+  token: Joi.string(),
 });
