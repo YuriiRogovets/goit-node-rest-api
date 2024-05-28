@@ -5,9 +5,10 @@ import { isValidObjectId } from "mongoose";
 
 
 export const getAllContacts = async (req, res, next) => {
+
     try {
-        const contacts = await Contact.find();
-        res.status(200).json(contacts); 
+        const contacts = await Contact.find({owner: req.user.id});
+        res.status(200).send(contacts); 
     } catch (error) {
         
         next(error);
@@ -18,14 +19,17 @@ export const getOneContact = async (req, res, next) => {
        
     try {
         const { id } = req.params;
+
     if (isValidObjectId(id) !== true) throw HttpError(400, `${id} is not valid id`);
         
-        const contact = await Contact.findById(id);
+        const contact = await Contact.findOne({_id:id, owner: req.user.id});
 
         if (contact === null) {
             throw HttpError(404);
         }
-        res.status(200).json(contact); 
+
+     
+        res.status(200).send(contact); 
 
     } catch (error) {
         
@@ -40,8 +44,8 @@ export const deleteContact = async (req, res, next) => {
          const { id } = req.params;
          if (isValidObjectId(id) !== true) throw HttpError(400, `${id} is not valid id`);
 
-        const delContact = await Contact.findByIdAndDelete(id);
-        console.log(delContact);
+        const delContact = await Contact.findByIdAndDelete({_id:id, owner: req.user.id});
+        
         if (delContact === null) {
             throw HttpError(404);
         }
@@ -54,25 +58,28 @@ export const deleteContact = async (req, res, next) => {
 };
 
 export const createContact = async (req, res, next) => {
-    
+        
     try {
-    const contact = {
-        name: req.body.name,
-        email: req.body.email,
-        phone: req.body.phone
-    }
-    const { error } = createContactSchema.validate(contact, {abortEarly: false})
+        const contact = {
+            name: req.body.name,
+            email: req.body.email,
+            phone: req.body.phone,
+            favorite: req.body.favorite,
+            owner: req.user.id,
+        };
+
+        const { error } = createContactSchema.validate(contact, { abortEarly: false })
     
         if (typeof error !== "undefined") {
         
-            throw HttpError(400, error);
+            throw HttpError(400, error.details[0].message);
             
-    } else {
-        
-            const newContact = await Contact.create(contact);
-                    
-        res.status(201).json(newContact); 
         }
+        
+        const newContact = await Contact.create(contact);
+                    
+        res.status(201).json(newContact);
+        
 
     } catch (error) {
         
@@ -86,6 +93,7 @@ export const updateContact = async (req, res, next) => {
          if (isValidObjectId(id) !== true) throw HttpError(400, `${id} is not valid id`);
         
         const data = req.body;
+        // console.log(data);
         
         if (Object.keys(data).length === 0) {
 
@@ -94,7 +102,7 @@ export const updateContact = async (req, res, next) => {
         }
                      
         const { error } = updateContactSchema.validate(data, { abortEarly: false });      
-    
+        
         if (error) {
 
             throw HttpError(400, error.message);
@@ -102,16 +110,20 @@ export const updateContact = async (req, res, next) => {
         }
         
         const updatedContact = await Contact.findByIdAndUpdate(id, data, { new: true });
-
-        console.log(updatedContact);
-
-
-        if (updatedContact === null) {
-            console.log("updatedContact === null");
-                throw HttpError(404);
-        }
         
-        res.status(200).json(updatedContact);    
+        if (updatedContact === null) {
+           
+            throw HttpError(404);
+        }
+
+        if (updatedContact.owner.toString() !== req.user.id) {
+             console.log(updatedContact.owner.toString() );
+            throw HttpError(404);
+          } 
+
+        
+        
+        res.status(200).send(updatedContact);    
 
     } catch (error) {        
         next(error);
@@ -135,17 +147,20 @@ export const updateStatusContact = async (req, res, next) => {
         }
 
 
-    const updatedContact = await Contact.findByIdAndUpdate(id, data, { new: true });
-
-        console.log(updatedContact);
-
+        const updatedContact = await Contact.findByIdAndUpdate(id, data, { new: true });
 
         if (updatedContact === null) {
             console.log("updatedContact === null");
                 throw HttpError(404);
         }
         
-        res.status(200).json(updatedContact);    
+        if (updatedContact.owner.toString() !== req.user.id) {
+            throw HttpError(404);
+          } 
+
+        
+        
+        res.status(200).send(updatedContact);    
         
 } catch (error) {
     next(error);
