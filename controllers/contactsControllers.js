@@ -3,7 +3,6 @@ import { createContactSchema, updateContactSchema, updateStatusContactSchema } f
 import Contact from "../models/contact.js"
 import { isValidObjectId } from "mongoose";
 
-
 export const getAllContacts = async (req, res, next) => {
 
     try {
@@ -28,7 +27,6 @@ export const getOneContact = async (req, res, next) => {
             throw HttpError(404);
         }
 
-     
         res.status(200).send(contact); 
 
     } catch (error) {
@@ -44,7 +42,7 @@ export const deleteContact = async (req, res, next) => {
          const { id } = req.params;
          if (isValidObjectId(id) !== true) throw HttpError(400, `${id} is not valid id`);
 
-        const delContact = await Contact.findByIdAndDelete({_id:id, owner: req.user.id});
+        const delContact = await Contact.findOneAndDelete({ _id: id, owner: req.user.id });
         
         if (delContact === null) {
             throw HttpError(404);
@@ -93,7 +91,6 @@ export const updateContact = async (req, res, next) => {
          if (isValidObjectId(id) !== true) throw HttpError(400, `${id} is not valid id`);
         
         const data = req.body;
-        // console.log(data);
         
         if (Object.keys(data).length === 0) {
 
@@ -109,19 +106,13 @@ export const updateContact = async (req, res, next) => {
             
         }
         
-        const updatedContact = await Contact.findByIdAndUpdate(id, data, { new: true });
+        const updatedContact = await Contact.findOneAndUpdate(
+      { _id: id, owner: req.user.id }, data, { new: true });
         
         if (updatedContact === null) {
            
             throw HttpError(404);
-        }
-
-        if (updatedContact.owner.toString() !== req.user.id) {
-             console.log(updatedContact.owner.toString() );
-            throw HttpError(404);
-          } 
-
-        
+        }   
         
         res.status(200).send(updatedContact);    
 
@@ -146,19 +137,12 @@ export const updateStatusContact = async (req, res, next) => {
             
         }
 
-
-        const updatedContact = await Contact.findByIdAndUpdate(id, data, { new: true });
+        const updatedContact = await Contact.findOneAndUpdate({ _id: id, owner: req.user.id }, data, { new: true });
 
         if (updatedContact === null) {
-            console.log("updatedContact === null");
+            
                 throw HttpError(404);
         }
-        
-        if (updatedContact.owner.toString() !== req.user.id) {
-            throw HttpError(404);
-          } 
-
-        
         
         res.status(200).send(updatedContact);    
         
