@@ -17,18 +17,14 @@ function auth(req, res, next) {
     
          
   
-    jwt.verify(token, process.env.JWT_SECRET, async(err, decode) => {
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decode) => {
        
         if (err) {
             return res.status(401).send({ message: "Not authorized" })
         }
-    
-    
-    
-    
+       
         try {
             
-
             const user = await User.findById(decode.id);
             if (user === null) {
                 return res.status(401).send({ message: "Not authorized" });
@@ -44,8 +40,8 @@ function auth(req, res, next) {
 
         } catch (error) {
             next(error);
-        }        
+        }
     })
-    }
+};
 
 export default auth;

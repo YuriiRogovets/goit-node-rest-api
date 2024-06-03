@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt"
 import User from "../models/user.js";
 import { registerSchema, loginSchema } from "../schemas/userSchema.js";
+import gravatar from "gravatar";
 
 
 
@@ -21,9 +22,11 @@ async function register(req, res, next) {
         if (userEmail !== null) {
             return res.status(409).send({ message: "Email in use" })
         }
+        
+        const avatarRegister = gravatar.url(email); 
 
         const passwordHash = await bcrypt.hash(password, 10);
-        const result = await User.create({ email, password: passwordHash });
+        const result = await User.create({ email, password: passwordHash, avatarURL: avatarRegister });
 
         const feedbackMessage = {
             user: {
@@ -64,7 +67,7 @@ async function login(req, res, next) {
                  return res.status(401).send({message:"Email or password is wrong"})
             }
             
-            const token = jwt.sign({ id: result._id }, process.env.JWT_SECRET, { expiresIn: 3600 },); 
+            const token = jwt.sign({ id: result._id }, process.env.JWT_SECRET, { expiresIn: "8h" }); 
                     
             const updatedUser = await User.findByIdAndUpdate(result._id, { token }, { new: true });
 
@@ -99,7 +102,7 @@ async function logout(req, res, next) {
 async function current(req, res, next) {
     const { id } = req.user;
     const user = await User.findById(id);
-  console.log(req.user);
+  
   res.status(200).send({
     email: user.email,
     subscription: user.subscription,

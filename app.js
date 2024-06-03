@@ -4,6 +4,7 @@ import morgan from "morgan";
 import cors from "cors";
 import routes from "./routes/indexRoutes.js";
 import "./db/db.js"
+import path from "node:path";
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(morgan("tiny"));
 
 app.use(express.json());
 
+app.use("/avatars", express.static(path.resolve("public/avatars")));
 app.use("/", routes);
 
 
