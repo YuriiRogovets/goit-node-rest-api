@@ -18,10 +18,10 @@ async function changeAvatar(req, res, next) {
 
         await fs.rename(req.file.path, newPath);
 
-        const updatedUser = await User.findByIdAndUpdate(req.user.id, { avatarURL: req.file.filename }, { new: true });
+        const updatedUser = await User.findByIdAndUpdate(req.user.id, { avatarURL: `/avatars/${req.file.filename}`, }, { new: true });
 
         const feedbackMessage = {
-            avatarURL: `/avatars/${updatedUser.avatarURL}`
+            avatarURL: updatedUser.avatarURL
             };
 
         res.send(feedbackMessage);
