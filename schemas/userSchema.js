@@ -11,3 +11,7 @@ export const loginSchema = Joi.object({
     password: Joi.string().required(),
     email: Joi.string().required(),
 });
+
+export const repeatVerifySchema = Joi.object({
+  email: Joi.string().required(),
+});

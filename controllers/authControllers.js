@@ -1,10 +1,11 @@
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
 import User from "../models/user.js";
-import { registerSchema, loginSchema } from "../schemas/userSchema.js";
+import { registerSchema, loginSchema, repeatVerifySchema } from "../schemas/userSchema.js";
 import gravatar from "gravatar";
-
-
+import mail from "../mail.js";
+import crypto from "node:crypto";
+import HttpError from "../helpers/HttpError.js";
 
 
 async function register(req, res, next) {
@@ -23,10 +24,21 @@ async function register(req, res, next) {
             return res.status(409).send({ message: "Email in use" })
         }
         
-        const avatarRegister = gravatar.url(email); 
+        const avatarRegister = gravatar.url(email);
 
         const passwordHash = await bcrypt.hash(password, 10);
-        const result = await User.create({ email, password: passwordHash, avatarURL: avatarRegister });
+
+        const verificationToken = crypto.randomUUID();
+
+        mail.sendMail({
+            to: email,
+            from: "yura.rogovets@gmail.com",
+            subject: "Welcome to your Phone Book!",
+            html: `To confirm you email please click on <a href="http://localhost:3000/users/verify/${verificationToken}">link</a>`,
+            text: `To confirm you email please open the link http://localhost:3000/users/verify/${verificationToken}`,
+        })
+
+        const result = await User.create({ email, password: passwordHash, avatarURL: avatarRegister, verificationToken });
 
         const feedbackMessage = {
             user: {
@@ -58,13 +70,17 @@ async function login(req, res, next) {
             const result = await User.findOne({ email: email });
                         
             if (result === null) {
-            return res.status(401).send({message:"Email or password is wrong"})
+                return res.status(401).send({ message: "Email or password is wrong" });
             }
             
             const isMatch = await bcrypt.compare(password, result.password);
 
             if (isMatch === false) {
-                 return res.status(401).send({message:"Email or password is wrong"})
+                return res.status(401).send({ message: "Email or password is wrong" });
+            }
+            
+            if (result.verify === false) {
+                return res.status(401).send({ message: "Please verify your email" });
             }
             
             const token = jwt.sign({ id: result._id }, process.env.JWT_SECRET, { expiresIn: "8h" }); 
@@ -109,6 +125,66 @@ async function current(req, res, next) {
   });
 }
 
+async function verifyEmail(req, res, next) {
     
+    try {
+       
+        const {verificationToken} = req.params;
 
-export default { register, login, logout, current };
+        const result = await User.findOne({ verificationToken: verificationToken });
+
+        if (result === null) {
+
+            res.status(404).send({ message: "User not found" });
+        }
+
+        await User.findByIdAndUpdate(result._id, { verify: true, verificationToken: null });
+
+        res.status(200).send({ message: "Verification successful" });
+
+    } catch (error) {
+
+        next(error);
+    } 
+
+}
+
+async function repeatVerifyEmail(req, res, next) {
+         
+    try {
+        const { email } = req.body;
+
+        const { error } = repeatVerifySchema.validate({email});
+
+        if (error) throw HttpError(400, error.message);
+
+
+        const result = await User.findOne({ email });
+
+        if (result === null) {
+            throw HttpError(404);
+        }
+
+        if (result.verify) {
+
+            throw HttpError(400, "Verification has already been passed");
+        }
+        
+        mail.sendMail({
+            to: email,
+            from: "yura.rogovets@gmail.com",
+            subject: "Welcome to your Phone Book!",
+            html: `To confirm you email please click on <a href="http://localhost:3000/users/verify/${result.verificationToken}">link</a>`,
+            text: `To confirm you email please open the link http://localhost:3000/users/verify/${result.verificationToken}`,
+        })
+
+      res.status(200).send({ message: "Verification email sent" });
+     
+    } catch (error) {
+
+        next(error);
+    }
+
+}
+
+export default { register, login, logout, current, verifyEmail, repeatVerifyEmail };
